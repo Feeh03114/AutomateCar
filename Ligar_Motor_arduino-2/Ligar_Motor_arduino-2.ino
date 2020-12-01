@@ -1,7 +1,8 @@
 /*
  * Parte 1
  * Automação da partida do motor
- */
+ * Autimação dos farois
+*/
 
 #include "Servo.h"
 #include <OneWire.h>
