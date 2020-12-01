@@ -28,11 +28,17 @@ DeviceAddress sensor1;
 #define AQUECEDOR_combustivel_output 11
 #define ServoMotor 12
 
+#define lanterna_output 13
+#define farol_output 14
+#define farol_de_milha_output 15
 
-#define CHAVE_input 13
+
+#define CHAVE_input 16
+
+#define Sensor_LDR A5
 
 Servo meuservo; // Cria o objeto servo para programação 
-int angulo = 0;
+
 
 //definindo variveis
 int Chave = 0;
@@ -41,7 +47,9 @@ int vfarolmilha = 0;
 int temp = 0;
 boolean Status_car = false;
 
+int angulo = 0;
 int MOTOR_on = 0;
+int LUZ = 0;
 
 unsigned long time0;
 unsigned long time1;
@@ -67,6 +75,10 @@ pinMode(injetor_output, OUTPUT);
 pinMode(AQUECEDOR_injetor_output, OUTPUT);
 pinMode(AQUECEDOR_combustivel_output, OUTPUT);
 
+pinMode(lanterna_output, OUTPUT);
+pinMode(farol_output, OUTPUT);
+pinMode(farol_de_milha_output, OUTPUT);
+
 
 meuservo.attach(ServoMotor);
 
@@ -77,13 +89,13 @@ digitalWrite(chave_on_output, LOW);
 digitalWrite(chave_ACC_output, LOW);
 digitalWrite(motor_arranque_output, LOW);
 digitalWrite(injetor_output, LOW);
+digitalWrite(lanterna_output, LOW);
+digitalWrite(farol_output, LOW);
+digitalWrite(farol_de_milha_output, LOW);
 meuservo.write(angulo);
 }
 
 void loop() {
-
-
-
 
 Chave = digitalRead(CHAVE_input);
 Car_On();
@@ -91,7 +103,7 @@ Car_On();
 if (Chave == 1) {
 
 Status_car = Car_ONLINE();
-
+farois();
   if (Status_car) {  // VERIFICAÇÀO PARA VER SE O MOTOR JA ESTA LIGADO
     digitalWrite(chave_ACC_output, LOW);
     Car_partida();
@@ -100,20 +112,25 @@ Status_car = Car_ONLINE();
       meuservo.write(angulo + 180);
       temp = temperatura_motor();
       digitalWrite(chave_ACC_output, HIGH);
+      farois();
     }else{
       digitalWrite(AQUECEDOR_combustivel_output, LOW); // Carro esta ligado com a temperatura certa entao ele deligará o aquecedor e volta o acelerador ao normal
       meuservo.write(angulo);
       digitalWrite(chave_ACC_output, HIGH);
+      farois();
   }
   }
   
 }else{
     digitalWrite(AQUECEDOR_injetor_output, LOW);
     digitalWrite(AQUECEDOR_combustivel_output, LOW);
+    digitalWrite(chave_on_output, LOW);
     digitalWrite(chave_ACC_output, LOW);
     digitalWrite(motor_arranque_output, LOW);
     digitalWrite(injetor_output, LOW);
-    
+    digitalWrite(lanterna_output, LOW);
+    digitalWrite(farol_output, LOW);
+    digitalWrite(farol_de_milha_output, LOW);
     meuservo.write(angulo);
 }
   
@@ -177,5 +194,23 @@ sensors.requestTemperatures();
   }else{
     return 0;
   }
+  
+}
+
+void farois(){
+  digitalWrite(lanterna_output, HIGH);
+  LUZ = analogRead(Sensor_LDR);
+
+    if ((LUZ <= 500) and (!Status_car))    
+  {  
+    digitalWrite(farol_output, HIGH);
+    digitalWrite(farol_de_milha_output, HIGH);   
+  }
+  else  //Caso contrário, apaga o led  
+  {  
+    digitalWrite(farol_output, LOW);
+    digitalWrite(farol_de_milha_output, LOW);
+  } 
+
   
 }
