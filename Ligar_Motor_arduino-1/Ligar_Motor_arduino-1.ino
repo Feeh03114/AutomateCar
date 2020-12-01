@@ -1,8 +1,18 @@
+/*
+ * Parte 1
+ * Automação da partida do motor
+ */
+
 #include "Servo.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 //definindo pinos de entradas
-#define sensorTemp1_input A0
-#define sensorLums_input A1
+#define ONE_WIRE_BUS 14
+
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+DeviceAddress sensor1;
 
 #define Motor_on_input 2
 
@@ -18,8 +28,10 @@
 #define AQUECEDOR_combustivel_output 10
 #define ServoMotor 11
 
+#define Motor_ligado 12
 
-#define CHAVE_input 12
+
+#define CHAVE_input 13
 
 Servo meuservo; // Cria o objeto servo para programação 
 int angulo = 0;
@@ -28,7 +40,10 @@ int angulo = 0;
 int Chave = 0;
 int vfarol = 0;
 int vfarolmilha = 0;
+int temp = 0;
+boolean Status_car = false;
 
+int MOTOR_on = 0;
 
 unsigned long time0;
 unsigned long time1;
@@ -36,11 +51,9 @@ unsigned long time2;
 unsigned long time3;
 
 void setup() {
+  sensors.begin();
   
 //definindo entradas
-pinMode(sensorLums_input, INPUT);
-pinMode(sensorTemp1_input, INPUT);
-pinMode(sensorTemp2_input, INPUT);
 
 pinMode(Motor_on_input, INPUT);
 
@@ -56,6 +69,8 @@ pinMode(injetor_output, OUTPUT);
 pinMode(AQUECEDOR_injetor_output, OUTPUT);
 pinMode(AQUECEDOR_combustivel_output, OUTPUT);
 
+pinMode(Motor_ligado, OUTPUT);
+
 
 meuservo.attach(ServoMotor);
 
@@ -66,6 +81,7 @@ digitalWrite(chave_on_output, LOW);
 digitalWrite(chave_ACC_output, LOW);
 digitalWrite(motor_arranque_output, LOW);
 digitalWrite(injetor_output, LOW);
+digitalWrite(Motor_ligado, LOW);
 meuservo.write(angulo);
 }
 
@@ -75,16 +91,18 @@ void loop() {
 
 
 Chave = digitalRead(CHAVE_input);
-Car_On()
-digitalWrite(chave_ACC_output, HIGH);
+Car_On();
+
 if (Chave == 1) {
 
-boolean Status_car = Car_ONLINE();
+Status_car = Car_ONLINE();
+
   if (Status_car) {  // VERIFICAÇÀO PARA VER SE O MOTOR JA ESTA LIGADO
     digitalWrite(chave_ACC_output, LOW);
-    Car_partida()
+    Car_partida();
    }else{ if ((temp == 1)and (!Status_car)) { // Carro esta ligado so que a temperatura do motor ainda esta baixa, ele vai ligar o aquecedor do motor e dai deixar o carro acelerado um pouco
-     digitalWrite(AQUECEDOR_combustivel_output, temp);
+      digitalWrite(Motor_ligado, HIGH);
+      digitalWrite(AQUECEDOR_combustivel_output, temp);
       meuservo.write(angulo + 180);
       temp = temperatura_motor();
       digitalWrite(chave_ACC_output, HIGH);
@@ -92,11 +110,19 @@ boolean Status_car = Car_ONLINE();
       digitalWrite(AQUECEDOR_combustivel_output, LOW); // Carro esta ligado com a temperatura certa entao ele deligará o aquecedor e volta o acelerador ao normal
       meuservo.write(angulo);
       digitalWrite(chave_ACC_output, HIGH);
+      digitalWrite(Motor_ligado, HIGH);
   }
   }
   
 }else{
-  
+    digitalWrite(AQUECEDOR_injetor_output, LOW);
+    digitalWrite(AQUECEDOR_combustivel_output, LOW);
+    digitalWrite(chave_ACC_output, LOW);
+    digitalWrite(motor_arranque_output, LOW);
+    digitalWrite(injetor_output, LOW);
+    digitalWrite(Motor_ligado, LOW);
+    
+    meuservo.write(angulo);
 }
   
 }
@@ -139,7 +165,7 @@ void Car_partida(){
 
 
 
-boolean Car_ONLINE(){
+boolean Car_ONLINE(){ // Funcao que verifica e retorna se o motor esta ligado ou nao
 
 MOTOR_on = digitalRead(Motor_on_input);
 
@@ -151,9 +177,10 @@ if (MOTOR_on == 0) {
 
 }
 
-int temperatura_motor(){
-int temperature = temp.getTemp();
-  if (temperature < 50) {
+int temperatura_motor(){ // Funcao que verifica e retorna se a temperatura do motor esta baixa ou nao
+sensors.requestTemperatures();
+  float tempC = sensors.getTempC(sensor1);
+  if (tempC < 50) {
     return 1;
   }else{
     return 0;
