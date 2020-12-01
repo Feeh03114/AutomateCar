@@ -1,7 +1,10 @@
 /*
- * Parte 1
+ * Parte 1 - Arduino
+ * 
  * Automação da partida do motor
  * Autimação dos farois
+ * 
+ * by Felipe Alessander Caetano Luiz
 */
 
 #include "Servo.h"
